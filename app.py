@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, url_for, redirect, abort, jsonify, flash
 from flask import send_from_directory
 import psycopg2
-import socket
 import os
 
 
@@ -14,41 +13,6 @@ class User:
 
 
 app = Flask(__name__)
-
-
-def get_local_ip():
-    # Создаем сокет
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # Подключаемся к общедоступному адресу
-        s.connect(("8.8.8.8", 80))  # Google DNS
-        # Получаем локальный IP-адрес
-        server_ip = s.getsockname()[0]
-
-        # Получаем путь к директории, где находится текущий файл
-        project_folder = os.path.dirname(os.path.abspath(__file__))
-        # Выходим из текущей папки и заходим в папку Android
-        assets_folder = os.path.join(project_folder, '..', 'android', 'app', 'src', 'main', 'assets')
-
-        # Создаем папку assets, если она не существует
-        os.makedirs(assets_folder, exist_ok=True)
-
-        # Сохраняем IP-адрес в файл
-        with open(os.path.join(assets_folder, 'ip_addresses.txt'), 'w') as f:
-            f.write(f"{server_ip}\n")
-
-        return f"IP-адрес {server_ip} успешно сохранён в файл ip_addresses.txt"
-    except Exception as e:
-        return f"Не удалось получить IP-адрес: {e}"
-    finally:
-        s.close()
-
-
-# Возвращение IP по запросу клиента
-@app.route('/my_ip')
-def home():
-    local_ip = get_local_ip()
-    return f"Локальный IP-адрес вашего устройства: {local_ip}"
 
 
 @app.route('/')
@@ -82,7 +46,6 @@ def create_user_mob():
         cursor.execute('''INSERT INTO USERS(login, password) VALUES (%s, %s);''', (login, password))
 
         connection.commit()
-
     except Exception:
         return abort(400, 'Login must be unique')
     finally:
@@ -172,5 +135,4 @@ def close_connection(conn, cur):
 
 
 if __name__ == "__main__":
-    get_local_ip()
     app.run(host="0.0.0.0", port=5000)
